@@ -113,6 +113,7 @@ static NSString *kDouYinIdentifier = @"douYinIdentifier";
 }
 
 - (BOOL)prefersStatusBarHidden {
+    /// 如果只是支持iOS9+ 那直接return NO即可，这里为了适配iOS8
     return self.player.isStatusBarHidden;
 }
 

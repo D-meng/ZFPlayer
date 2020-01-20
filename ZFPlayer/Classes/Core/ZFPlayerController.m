@@ -710,6 +710,14 @@
 
 - (BOOL)shouldForceDeviceOrientation {
     if (self.forceDeviceOrientation) return YES;
+    NSArray<NSString *> *versionStrArr = [[UIDevice currentDevice].systemVersion componentsSeparatedByString:@"."];
+    int firstVer = [[versionStrArr objectAtIndex:0] intValue];
+    int secondVer = [[versionStrArr objectAtIndex:1] intValue];
+    if (firstVer == 8) {
+        if (secondVer >= 1 && secondVer <= 3) {
+            return YES;
+        }
+    }
     return NO;
 }
 
@@ -1098,6 +1106,10 @@
     objc_setAssociatedObject(self, @selector(zf_playerDidDisappearInScrollView), zf_playerDidDisappearInScrollView, OBJC_ASSOCIATION_COPY_NONATOMIC);
 }
 
+- (void)setZf_scrollViewDidStopScrollCallback:(void (^)(NSIndexPath * _Nonnull))zf_scrollViewDidStopScrollCallback {
+    objc_setAssociatedObject(self, @selector(zf_scrollViewDidStopScrollCallback), zf_scrollViewDidStopScrollCallback, OBJC_ASSOCIATION_COPY_NONATOMIC);
+}
+
 #pragma mark - getter
 
 - (UIScrollView *)scrollView {
@@ -1167,6 +1179,10 @@
 }
 
 - (void (^)(NSIndexPath * _Nonnull))zf_playerDidDisappearInScrollView {
+    return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void (^)(NSIndexPath * _Nonnull))zf_scrollViewDidStopScrollCallback {
     return objc_getAssociatedObject(self, _cmd);
 }
 
