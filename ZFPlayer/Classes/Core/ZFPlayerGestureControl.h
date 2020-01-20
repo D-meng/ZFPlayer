@@ -110,10 +110,8 @@ typedef NS_OPTIONS(NSUInteger, ZFPlayerDisablePanMovingDirection) {
 /// The pan gesture direction.
 @property (nonatomic, readonly) ZFPanDirection panDirection;
 
-/// The pan location.
 @property (nonatomic, readonly) ZFPanLocation panLocation;
 
-/// The moving drection.
 @property (nonatomic, readonly) ZFPanMovingDirection panMovingDirection;
 
 /// The gesture types that the player not support.
@@ -123,12 +121,12 @@ typedef NS_OPTIONS(NSUInteger, ZFPlayerDisablePanMovingDirection) {
 @property (nonatomic) ZFPlayerDisablePanMovingDirection disablePanMovingDirection;
 
 /**
- Add  all gestures(singleTap、doubleTap、panGR、pinchGR) to the view.
+ Add gestures to the view.
  */
 - (void)addGestureToView:(UIView *)view;
 
 /**
- Remove all gestures(singleTap、doubleTap、panGR、pinchGR) form the view.
+ Remove gestures form the view.
  */
 - (void)removeGestureToView:(UIView *)view;
 

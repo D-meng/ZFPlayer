@@ -12,7 +12,7 @@
 #import <ZFPlayer/ZFIJKPlayerManager.h>
 #import <ZFPlayer/KSMediaPlayerManager.h>
 #import <ZFPlayer/ZFPlayerControlView.h>
-#import "ZFNotAutoPlayViewController.h"
+#import "ZFSmallPlayViewController.h"
 #import "UIImageView+ZFCache.h"
 #import "ZFUtilities.h"
 
@@ -130,7 +130,7 @@ static NSString *kVideoCover = @"https://upload-images.jianshu.io/upload_images/
 }
 
 - (void)pushNewVC {
-    ZFNotAutoPlayViewController *vc = [[ZFNotAutoPlayViewController alloc] init];
+    ZFSmallPlayViewController *vc = [[ZFSmallPlayViewController alloc] init];
     [self.navigationController pushViewController:vc animated:YES];
 }
 

@@ -146,7 +146,6 @@
             [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionAllowBluetooth error:nil];
             [[AVAudioSession sharedInstance] setActive:YES error:nil];
         }
-        if (self.viewControllerDisappear) self.pauseByEvent = YES;
     };
     
     self.currentPlayerManager.playerPlayTimeChanged = ^(id<ZFPlayerMediaPlayback>  _Nonnull asset, NSTimeInterval currentTime, NSTimeInterval duration) {
@@ -228,7 +227,6 @@
         self.currentPlayerManager.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.controlView.frame = self.currentPlayerManager.view.bounds;
         self.controlView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [self.orientationObserver updateRotateView:self.currentPlayerManager.view containerView:self.containerView];
     }
 }
 
