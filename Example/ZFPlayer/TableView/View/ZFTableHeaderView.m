@@ -22,6 +22,7 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
+        self.tag = 100;
         [self addSubview:self.coverImageView];
         [self.coverImageView addSubview:self.playBtn];
         self.backgroundColor = [UIColor blackColor];
@@ -66,7 +67,7 @@
     if (!_coverImageView) {
         _coverImageView = [[UIImageView alloc] init];
         _coverImageView.userInteractionEnabled = YES;
-        _coverImageView.tag = kPlayerViewTag;
+        _coverImageView.tag = 100;
         _coverImageView.contentMode = UIViewContentModeScaleAspectFill;
         _coverImageView.clipsToBounds = YES;
         _coverImageView.image = [UIImage imageNamed:@"loading_bgView"];

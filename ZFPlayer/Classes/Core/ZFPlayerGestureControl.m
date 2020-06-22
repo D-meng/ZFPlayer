@@ -216,7 +216,7 @@
                 case ZFPanDirectionH: {
                     if (translate.x > 0) {
                         self.panMovingDirection = ZFPanMovingDirectionRight;
-                    } else {
+                    } else if (translate.y < 0) {
                         self.panMovingDirection = ZFPanMovingDirectionLeft;
                     }
                 }

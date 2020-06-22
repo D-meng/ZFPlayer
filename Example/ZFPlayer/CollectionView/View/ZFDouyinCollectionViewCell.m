@@ -146,7 +146,7 @@
     if (!_coverImageView) {
         _coverImageView = [[UIImageView alloc] init];
         _coverImageView.userInteractionEnabled = YES;
-        _coverImageView.tag = kPlayerViewTag;
+        _coverImageView.tag = 100;
     }
     return _coverImageView;
 }

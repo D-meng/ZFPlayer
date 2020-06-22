@@ -27,6 +27,8 @@
 
 /** 滑块的大小 */
 static const CGFloat kSliderBtnWH = 19.0;
+/** 间距 */
+static const CGFloat kProgressMargin = 2.0;
 /** 进度的高度 */
 static const CGFloat kProgressH = 1.0;
 /** 拖动slider动画的时间*/
@@ -84,8 +86,6 @@ static const CGFloat kAnimate = 0.3;
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    if (isnan(self.value) || isnan(self.bufferValue)) return;
-
     CGFloat min_x = 0;
     CGFloat min_y = 0;
     CGFloat min_w = 0;

@@ -42,12 +42,7 @@
         @strongify(self)
         self.view.backgroundColor = isFullScreen ? [UIColor blackColor] : [UIColor whiteColor];
         [self.textField resignFirstResponder];
-        kAPPDelegate.allowOrentitaionRotation = isFullScreen;
         [self setNeedsStatusBarAppearanceUpdate];
-        if (!isFullScreen) {
-            /// 解决导航栏上移问题
-            self.navigationController.navigationBar.zf_height = KNavBarHeight;
-        }
     };
     
     NSString *URLString = [@"http://flv3.bn.netease.com/tvmrepo/2018/6/H/9/EDJTRBEH9/SD/EDJTRBEH9-mobile.mp4" stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];

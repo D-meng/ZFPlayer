@@ -132,9 +132,7 @@
     @weakify(self)
     [self seekToTime:0 completionHandler:^(BOOL finished) {
         @strongify(self)
-        if (finished) {
-            [self play];
-        }
+        [self play];
     }];
 }
 
@@ -234,8 +232,6 @@
         case IJKMPMovieFinishReasonPlaybackEnded: {
             ZFPlayerLog(@"playbackStateDidChange: 播放完毕: %d\n", reason);
             self.playState = ZFPlayerPlayStatePlayStopped;
-            [self.timer invalidate];
-            self.timer = nil;
             if (self.playerDidToEnd) self.playerDidToEnd(self);
         }
             break;
