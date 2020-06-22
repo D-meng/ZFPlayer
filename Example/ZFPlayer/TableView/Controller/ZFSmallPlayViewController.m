@@ -12,6 +12,7 @@
 #import <ZFPlayer/ZFPlayerControlView.h>
 #import <ZFPlayer/ZFIJKPlayerManager.h>
 #import <ZFPlayer/KSMediaPlayerManager.h>
+#import <ZFPlayer/UIView+ZFFrame.h>
 #import "ZFPlayerDetailViewController.h"
 #import "ZFUtilities.h"
 #import "ZFTableViewCell.h"
@@ -45,7 +46,7 @@ static NSString *kIdentifier = @"kIdentifier";
     ZFAVPlayerManager *playerManager = [[ZFAVPlayerManager alloc] init];
     
     /// player的tag值必须在cell里设置
-    self.player = [ZFPlayerController playerWithScrollView:self.tableView playerManager:playerManager containerViewTag:100];
+    self.player = [ZFPlayerController playerWithScrollView:self.tableView playerManager:playerManager containerViewTag:kPlayerViewTag];
     self.player.controlView = self.controlView;
     /// 移动网络依然自动播放
     self.player.WWANAutoPlay = YES;
@@ -58,8 +59,12 @@ static NSString *kIdentifier = @"kIdentifier";
     @weakify(self)
     self.player.orientationWillChange = ^(ZFPlayerController * _Nonnull player, BOOL isFullScreen) {
         @strongify(self)
+        kAPPDelegate.allowOrentitaionRotation = isFullScreen;
         [self setNeedsStatusBarAppearanceUpdate];
-        [UIViewController attemptRotationToDeviceOrientation];
+        if (!isFullScreen) {
+            /// 解决导航栏上移问题
+            self.navigationController.navigationBar.zf_height = KNavBarHeight;
+        }
         self.tableView.scrollsToTop = !isFullScreen;
     };
     
@@ -67,6 +72,14 @@ static NSString *kIdentifier = @"kIdentifier";
         @strongify(self)
         [self.controlView resetControlView];
         [self.player stopCurrentPlayingCell];
+    };
+    
+    /// 停止的时候找出最合适的播放
+    self.player.zf_scrollViewDidEndScrollingCallback = ^(NSIndexPath * _Nonnull indexPath) {
+        @strongify(self)
+        if (!self.player.playingIndexPath) {
+            [self playTheVideoAtIndexPath:indexPath];
+        }
     };
   
     /// 以下设置滑出屏幕后不停止播放
@@ -133,9 +146,9 @@ static NSString *kIdentifier = @"kIdentifier";
         [self.tableView reloadData];
         
         /// 找到可播放的cell
-        [self.tableView zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath *indexPath) {
+        [self.player zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath *indexPath) {
             @strongify(self)
-            [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+            [self playTheVideoAtIndexPath:indexPath];
         }];
     });
 }
@@ -215,7 +228,7 @@ static NSString *kIdentifier = @"kIdentifier";
     }
     /// 如果没有播放，则点击进详情页会自动播放
     if (!self.player.currentPlayerManager.isPlaying) {
-        [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+        [self playTheVideoAtIndexPath:indexPath];
     }
     /// 到详情页
     ZFPlayerDetailViewController *detailVC = [ZFPlayerDetailViewController new];
@@ -242,14 +255,14 @@ static NSString *kIdentifier = @"kIdentifier";
 #pragma mark - ZFTableViewCellDelegate
 
 - (void)zf_playTheVideoAtIndexPath:(NSIndexPath *)indexPath {
-    [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+    [self playTheVideoAtIndexPath:indexPath];
 }
 
 #pragma mark - private method
 
 /// play the video
-- (void)playTheVideoAtIndexPath:(NSIndexPath *)indexPath scrollToTop:(BOOL)scrollToTop {
-    [self.player playTheIndexPath:indexPath scrollToTop:scrollToTop];
+- (void)playTheVideoAtIndexPath:(NSIndexPath *)indexPath {
+    [self.player playTheIndexPath:indexPath];
     ZFTableViewCellLayout *layout = self.dataSource[indexPath.row];
     [self.controlView showTitle:layout.data.title
                  coverURLString:layout.data.thumbnail_url
@@ -273,14 +286,6 @@ static NSString *kIdentifier = @"kIdentifier";
         _tableView.estimatedRowHeight = 0;
         _tableView.estimatedSectionFooterHeight = 0;
         _tableView.estimatedSectionHeaderHeight = 0;
-        /// 停止的时候找出最合适的播放
-        @weakify(self)
-        _tableView.zf_scrollViewDidStopScrollCallback = ^(NSIndexPath * _Nonnull indexPath) {
-            @strongify(self)
-            if (!self.player.playingIndexPath) {
-                [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
-            }
-        };
     }
     return _tableView;
 }

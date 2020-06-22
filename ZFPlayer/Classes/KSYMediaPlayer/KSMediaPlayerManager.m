@@ -132,7 +132,9 @@
     @weakify(self)
     [self seekToTime:0 completionHandler:^(BOOL finished) {
         @strongify(self)
-        [self play];
+        if (finished) {
+            [self play];
+        }
     }];
 }
 
@@ -255,6 +257,8 @@
     NSInteger reason = [[notify.userInfo valueForKey:MPMoviePlayerPlaybackDidFinishReasonUserInfoKey] integerValue];
     if (reason == MPMovieFinishReasonPlaybackEnded) {
         self.playState = ZFPlayerPlayStatePlayStopped;
+        [self.timer invalidate];
+        self.timer = nil;
         if (self.playerDidToEnd) self.playerDidToEnd(self);
     } else if (reason == MPMovieFinishReasonPlaybackError) {
         self.playState = ZFPlayerPlayStatePlayFailed;

@@ -13,6 +13,7 @@
 #import <ZFPlayer/ZFAVPlayerManager.h>
 #import <ZFPlayer/ZFPlayerControlView.h>
 #import <ZFPlayer/KSMediaPlayerManager.h>
+#import <ZFPlayer/UIView+ZFFrame.h>
 
 static NSString * const reuseIdentifier = @"collectionViewCell";
 
@@ -40,7 +41,7 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
 //    ZFIJKPlayerManager *playerManager = [[ZFIJKPlayerManager alloc] init];
     
     /// player的tag值必须在cell里设置
-    self.player = [ZFPlayerController playerWithScrollView:self.collectionView playerManager:playerManager containerViewTag:100];
+    self.player = [ZFPlayerController playerWithScrollView:self.collectionView playerManager:playerManager containerViewTag:kPlayerViewTag];
     self.player.controlView = self.controlView;
     self.player.assetURLs = self.urls;
     self.player.shouldAutoPlay = YES;
@@ -48,7 +49,12 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
     @weakify(self)
     self.player.orientationWillChange = ^(ZFPlayerController * _Nonnull player, BOOL isFullScreen) {
         @strongify(self)
+        kAPPDelegate.allowOrentitaionRotation = isFullScreen;
         [self setNeedsStatusBarAppearanceUpdate];
+        if (!isFullScreen) {
+            /// 解决导航栏上移问题
+            self.navigationController.navigationBar.zf_height = KNavBarHeight;
+        }
         self.collectionView.scrollsToTop = !isFullScreen;
     };
     
@@ -56,7 +62,7 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
         @strongify(self)
         if (self.player.playingIndexPath.row < self.urls.count - 1 && !self.player.isFullScreen) {
             NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.player.playingIndexPath.row+1 inSection:0];
-            [self playTheVideoAtIndexPath:indexPath scrollToTop:YES];
+            [self playTheVideoAtIndexPath:indexPath scrollAnimated:YES];
         } else if (self.player.isFullScreen) {
             [self.player enterFullScreen:NO animated:YES];
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.player.orientationObserver.duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -64,6 +70,26 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
             });
         }
     };
+    
+    /// 停止的时候找出最合适的播放
+    self.player.zf_scrollViewDidEndScrollingCallback = ^(NSIndexPath * _Nonnull indexPath) {
+        @strongify(self)
+        [self playTheVideoAtIndexPath:indexPath scrollAnimated:NO];
+    };
+    
+    /*
+     
+    /// 滑动中找到适合的就自动播放
+    /// 如果是停止后再寻找播放可以忽略这个回调
+    /// 如果在滑动中就要寻找到播放的indexPath，并且开始播放，那就要这样写
+    self.player.zf_playerShouldPlayInScrollView = ^(NSIndexPath * _Nonnull indexPath) {
+        @strongify(self)
+        if ([indexPath compare:self.player.playingIndexPath] != NSOrderedSame) {
+            [self playTheVideoAtIndexPath:indexPath scrollAnimated:NO];
+        }
+    };
+     
+    */
 }
 
 - (void)viewWillLayoutSubviews {
@@ -74,9 +100,9 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     @weakify(self)
-    [self.collectionView zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath *indexPath) {
+    [self.player zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath *indexPath) {
         @strongify(self)
-        [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+        [self playTheVideoAtIndexPath:indexPath scrollAnimated:NO];
     }];
 }
 
@@ -122,8 +148,12 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
 }
 
 /// play the video
-- (void)playTheVideoAtIndexPath:(NSIndexPath *)indexPath scrollToTop:(BOOL)scrollToTop {
-    [self.player playTheIndexPath:indexPath scrollToTop:scrollToTop];
+- (void)playTheVideoAtIndexPath:(NSIndexPath *)indexPath scrollAnimated:(BOOL)animated {
+    if (animated) {
+        [self.player playTheIndexPath:indexPath scrollPosition:ZFPlayerScrollViewScrollPositionCenteredVertically animated:YES];
+    } else {
+        [self.player playTheIndexPath:indexPath];
+    }
     ZFTableData *data = self.dataSource[indexPath.row];
     [self.controlView showTitle:data.title
                  coverURLString:data.thumbnail_url
@@ -164,13 +194,13 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
     @weakify(self)
     cell.playBlock = ^(UIButton *sender) {
         @strongify(self)
-        [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+        [self playTheVideoAtIndexPath:indexPath scrollAnimated:NO];
     };
     return cell;
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+    [self playTheVideoAtIndexPath:indexPath scrollAnimated:NO];
 }
 
 - (UICollectionView *)collectionView {
@@ -188,12 +218,6 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
         _collectionView.dataSource = self;
         _collectionView.backgroundColor = [UIColor whiteColor];
         [_collectionView registerClass:[ZFCollectionViewCell class] forCellWithReuseIdentifier:reuseIdentifier];
-        /// 停止的时候找出最合适的播放
-        @weakify(self)
-        _collectionView.zf_scrollViewDidStopScrollCallback = ^(NSIndexPath * _Nonnull indexPath) {
-            @strongify(self)
-            [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
-        };
     }
     return _collectionView;
 }

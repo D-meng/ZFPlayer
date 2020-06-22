@@ -20,12 +20,12 @@ Before this, you used ZFPlayer, are you worried about encapsulating avplayer ins
 
 ![ZFPlayer思维导图](https://upload-images.jianshu.io/upload_images/635942-e99d76498cb01afb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-## Requirements
+## 🔨 Requirements
 
 - iOS 7+
 - Xcode 8+
 
-## Installation
+## 📲 Installation
 
 ZFPlayer is available through [CocoaPods](https://cocoapods.org). To install it,use player template simply add the following line to your Podfile:
 
@@ -43,7 +43,6 @@ Use AVPlayer simply add the following line to your Podfile:
 ```objc
 pod 'ZFPlayer/AVPlayer', '~> 3.0'
 ```
-如果使用AVPlayer边下边播可以参考使用[KTVHTTPCache](https://github.com/ChangbaDevs/KTVHTTPCache)
 
 Use ijkplayer simply add the following line to your Podfile:
 
@@ -59,7 +58,10 @@ pod 'ZFPlayer/KSYMediaPlayer', '~> 3.0'
 ```
 [KSYMediaPlayer SDK](https://github.com/ksvc/KSYMediaPlayer_iOS) support cocoapods
 
-## Usage introduce
+
+边下边播可以参考使用[KTVHTTPCache](https://github.com/ChangbaDevs/KTVHTTPCache)
+
+## 🐒 Usage
 
 ####  ZFPlayerController
 Main classes,normal style initialization and list style initialization (tableView, collection,scrollView)
@@ -96,36 +98,39 @@ player.controlView = controlView;
 ```
 
 
-## Picture demonstration
+## 📷 Screenshots
 
 ![Picture effect](https://upload-images.jianshu.io/upload_images/635942-1b0e23b7f5eabd9e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-## Author
+## 👨🏻‍💻 Author
 
 - Weibo: [@任子丰](https://weibo.com/zifeng1300)
 - Email: zifeng1300@gmail.com
-- QQ群: (付费群)
+- QQ群: 123449304
 
-![](https://upload-images.jianshu.io/upload_images/635942-c20708c913c591a0.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://upload-images.jianshu.io/upload_images/635942-a9fbbb2710de8eff.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-## Contributors
+## ❤️ Contributors
 
 林界：https://github.com/GeekLee609
 
 
-## 寻求志同道合的小伙伴
+## 🙋🏻‍♂️🙋🏻‍♀️寻求志同道合的小伙伴
 
-- 因本人工作忙，没有太多时间去维护ZFPlayer，在此向广大框架使用者说声：非常抱歉！😞
-- 现寻求志同道合的小伙伴一起维护此框架，有兴趣的小伙伴可以[发邮件](zifeng1300@gmail.com)给我，非常感谢😊
+- 现寻求志同道合的小伙伴一起维护此框架，有兴趣的小伙伴可以[发邮件](zifeng1300@gmail.com)给我，非常感谢！
 - 如果一切OK，我将开放框架维护权限（github、pod等）
-- 目前已经找到1位小伙伴 
 
-## 打赏作者
+## 💰 打赏作者
 
 如果ZFPlayer在开发中有帮助到你、如果你需要技术支持或者你需要定制功能，都可以拼命打赏我！
 
 ![支付.jpg](https://upload-images.jianshu.io/upload_images/635942-b9b836cfbb7a5e44.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+## 👮🏻 License
+
+ZFPlayer is available under the MIT license. See the LICENSE file for more info.
 
 
 

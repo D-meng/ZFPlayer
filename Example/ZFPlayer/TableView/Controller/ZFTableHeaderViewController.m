@@ -13,6 +13,7 @@
 #import <ZFPlayer/ZFPlayerControlView.h>
 #import <ZFPlayer/KSMediaPlayerManager.h>
 #import <ZFPlayer/ZFIJKPlayerManager.h>
+#import <ZFPlayer/UIView+ZFFrame.h>
 #import "ZFPlayerDetailViewController.h"
 #import "ZFTableData.h"
 #import "ZFOtherCell.h"
@@ -60,8 +61,12 @@ static NSString *kIdentifier = @"kIdentifier";
     @weakify(self)
     self.player.orientationWillChange = ^(ZFPlayerController * _Nonnull player, BOOL isFullScreen) {
         @strongify(self)
+        kAPPDelegate.allowOrentitaionRotation = isFullScreen;
         [self setNeedsStatusBarAppearanceUpdate];
-        [UIViewController attemptRotationToDeviceOrientation];
+        if (!isFullScreen) {
+            /// 解决导航栏上移问题
+            self.navigationController.navigationBar.zf_height = KNavBarHeight;
+        }
         self.tableView.scrollsToTop = !isFullScreen;
     };
     

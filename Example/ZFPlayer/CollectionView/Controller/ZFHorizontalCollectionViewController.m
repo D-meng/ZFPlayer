@@ -41,7 +41,7 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
     ZFAVPlayerManager *playerManager = [[ZFAVPlayerManager alloc] init];
     
     /// player的tag值必须在cell里设置
-    self.player = [ZFPlayerController playerWithScrollView:self.collectionView playerManager:playerManager containerViewTag:100];
+    self.player = [ZFPlayerController playerWithScrollView:self.collectionView playerManager:playerManager containerViewTag:kPlayerViewTag];
     self.player.controlView = self.controlView;
     self.player.assetURLs = self.urls;
     self.player.shouldAutoPlay = YES;
@@ -65,6 +65,12 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
         @strongify(self)
         [self.player.currentPlayerManager replay];
     };
+    
+    /// 停止的时候找出最合适的播放
+    self.player.zf_scrollViewDidEndScrollingCallback = ^(NSIndexPath * _Nonnull indexPath) {
+        @strongify(self)
+        [self playTheVideoAtIndexPath:indexPath];
+    };
 }
 
 - (void)viewWillLayoutSubviews {
@@ -82,9 +88,9 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     @weakify(self)
-    [self.collectionView zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath *indexPath) {
+    [self.player zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath *indexPath) {
         @strongify(self)
-        [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+        [self playTheVideoAtIndexPath:indexPath];
     }];
 }
 
@@ -130,8 +136,8 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
 }
 
 /// play the video
-- (void)playTheVideoAtIndexPath:(NSIndexPath *)indexPath scrollToTop:(BOOL)scrollToTop {
-    [self.player playTheIndexPath:indexPath scrollToTop:scrollToTop];
+- (void)playTheVideoAtIndexPath:(NSIndexPath *)indexPath {
+    [self.player playTheIndexPath:indexPath];
     ZFTableData *data = self.dataSource[indexPath.row];
     [self.controlView showTitle:data.title
                  coverURLString:data.thumbnail_url
@@ -172,13 +178,13 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
     @weakify(self)
     cell.playBlock = ^(UIButton *sender) {
         @strongify(self)
-        [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+        [self playTheVideoAtIndexPath:indexPath];
     };
     return cell;
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
+    [self playTheVideoAtIndexPath:indexPath];
 }
 
 - (UICollectionView *)collectionView {
@@ -204,13 +210,6 @@ static NSString * const reuseIdentifier = @"collectionViewCell";
         } else {
             self.automaticallyAdjustsScrollViewInsets = NO;
         }
-        /// 停止的时候找出最合适的播放
-        @weakify(self)
-        _collectionView.zf_scrollViewDidStopScrollCallback = ^(NSIndexPath * _Nonnull indexPath) {
-            @strongify(self)
-            [self playTheVideoAtIndexPath:indexPath scrollToTop:NO];
-        };
-        
     }
     return _collectionView;
 }
