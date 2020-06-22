@@ -41,7 +41,7 @@
 }
 
 - (BOOL)shouldAutorotate {
-    return YES;
+    return NO;
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
@@ -66,12 +66,28 @@
 @implementation UIWindow (CurrentViewController)
 
 + (UIViewController*)zf_currentViewController; {
-    UIWindow *window = [[UIApplication sharedApplication].delegate window];
+    __block UIWindow *window;
+    if (@available(iOS 13, *)) {
+        [[UIApplication sharedApplication].connectedScenes enumerateObjectsUsingBlock:^(UIScene * _Nonnull scene, BOOL * _Nonnull scenesStop) {
+            if ([scene isKindOfClass: [UIWindowScene class]]) {
+                UIWindowScene * windowScene = (UIWindowScene *)scene;
+                [windowScene.windows enumerateObjectsUsingBlock:^(UIWindow * _Nonnull windowTemp, NSUInteger idx, BOOL * _Nonnull windowStop) {
+                    if ([windowTemp isKeyWindow]) {
+                        window = windowTemp;
+                        *windowStop = true;
+                        *scenesStop = true;
+                    }
+                }];
+            }
+        }];
+    } else {
+        window = [[UIApplication sharedApplication].delegate window];
+    }
     UIViewController *topViewController = [window rootViewController];
     while (true) {
         if (topViewController.presentedViewController) {
             topViewController = topViewController.presentedViewController;
-        } else if ([topViewController isKindOfClass:[UINavigationController class]] && [(UINavigationController*)topViewController topViewController]) {
+        } else if ([topViewController isKindOfClass:[UINavigationController class]] && [(UINavigationController *)topViewController topViewController]) {
             topViewController = [(UINavigationController *)topViewController topViewController];
         } else if ([topViewController isKindOfClass:[UITabBarController class]]) {
             UITabBarController *tab = (UITabBarController *)topViewController;
@@ -87,7 +103,7 @@
 
 @interface ZFOrientationObserver ()
 
-@property (nonatomic, weak) UIView *view;
+@property (nonatomic, weak) ZFPlayerView *view;
 
 @property (nonatomic, assign, getter=isFullScreen) BOOL fullScreen;
 
@@ -113,24 +129,25 @@
         _supportInterfaceOrientation = ZFInterfaceOrientationMaskAllButUpsideDown;
         _allowOrentitaionRotation = YES;
         _roateType = ZFRotateTypeNormal;
+        _currentOrientation = UIInterfaceOrientationPortrait;
     }
     return self;
 }
 
-- (void)updateRotateView:(UIView *)rotateView
+- (void)updateRotateView:(ZFPlayerView *)rotateView
            containerView:(UIView *)containerView {
     self.view = rotateView;
     self.containerView = containerView;
 }
 
-- (void)cellModelRotateView:(UIView *)rotateView rotateViewAtCell:(UIView *)cell playerViewTag:(NSInteger)playerViewTag {
+- (void)cellModelRotateView:(ZFPlayerView *)rotateView rotateViewAtCell:(UIView *)cell playerViewTag:(NSInteger)playerViewTag {
     self.roateType = ZFRotateTypeCell;
     self.view = rotateView;
     self.cell = cell;
     self.playerViewTag = playerViewTag;
 }
 
-- (void)cellOtherModelRotateView:(UIView *)rotateView containerView:(UIView *)containerView {
+- (void)cellOtherModelRotateView:(ZFPlayerView *)rotateView containerView:(UIView *)containerView {
     self.roateType = ZFRotateTypeCellOther;
     self.view = rotateView;
     self.containerView = containerView;
@@ -157,18 +174,18 @@
 
 - (void)handleDeviceOrientationChange {
     if (self.fullScreenMode == ZFFullScreenModePortrait || !self.allowOrentitaionRotation) return;
+
+    UIInterfaceOrientation currentOrientation = UIInterfaceOrientationUnknown;
     if (UIDeviceOrientationIsValidInterfaceOrientation([UIDevice currentDevice].orientation)) {
-        _currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
+        currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
     } else {
-        _currentOrientation = UIInterfaceOrientationUnknown;
         return;
     }
-    
-    UIInterfaceOrientation currentOrientation = [UIApplication sharedApplication].statusBarOrientation;
+
     // Determine that if the current direction is the same as the direction you want to rotate, do nothing
-//    if (_currentOrientation == currentOrientation && !self.forceDeviceOrientation) return;
+    if (currentOrientation == _currentOrientation && !self.forceDeviceOrientation) return;
     
-    switch (_currentOrientation) {
+    switch (currentOrientation) {
         case UIInterfaceOrientationPortrait: {
             if ([self isSupportedPortrait]) {
                 [self enterLandscapeFullScreen:UIInterfaceOrientationPortrait animated:YES];
@@ -208,7 +225,8 @@
         if (self.blackView.superview != nil) [self.blackView removeFromSuperview];
     }
     if (self.orientationWillChange) self.orientationWillChange(self, self.isFullScreen);
-  
+    [UIViewController attemptRotationToDeviceOrientation];
+
     [superview addSubview:self.view];
     if (animated) {
         [UIView animateWithDuration:self.duration animations:^{
@@ -406,7 +424,24 @@
 
 - (UIWindow *)customWindow {
     if (!_customWindow) {
-        _customWindow = [[UIWindow alloc] initWithFrame:CGRectZero];
+        if (@available(iOS 13.0, *)) {
+            UIWindowScene *windowScene = nil;
+            for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive) {
+                    windowScene = (UIWindowScene *)scene;
+                }
+                if (!windowScene && [UIApplication sharedApplication].connectedScenes.count == 1) {
+                    windowScene = (UIWindowScene *)scene;
+                }
+            }
+            if (windowScene) {
+                _customWindow = [[UIWindow alloc] initWithWindowScene:windowScene];
+            } else {
+                _customWindow = [[UIWindow alloc] initWithFrame:CGRectZero];
+            }
+        } else {
+            _customWindow = [[UIWindow alloc] initWithFrame:CGRectZero];
+        }
     }
     return _customWindow;
 }
