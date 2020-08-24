@@ -244,7 +244,7 @@
             if (self.pauseWhenAppResignActive && self.currentPlayerManager.isPlaying) {
                 self.pauseByEvent = YES;
             }
-            if (self.isFullScreen && !self.isLockedScreen) self.orientationObserver.lockedScreen = YES;
+            self.orientationObserver.lockedScreen = YES;
             [[UIApplication sharedApplication].keyWindow endEditing:YES];
             if (!self.pauseWhenAppResignActive) {
                 [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
@@ -255,7 +255,7 @@
             @strongify(self)
             if (self.isViewControllerDisappear) return;
             if (self.isPauseByEvent) self.pauseByEvent = NO;
-            if (self.isFullScreen && !self.isLockedScreen) self.orientationObserver.lockedScreen = NO;
+            self.orientationObserver.lockedScreen = NO;
         };
         _notification.oldDeviceUnavailable = ^(ZFPlayerNotification * _Nonnull registrar) {
             @strongify(self)
@@ -711,8 +711,7 @@
 }
 
 - (BOOL)shouldForceDeviceOrientation {
-    if (self.forceDeviceOrientation) return YES;
-    return NO;
+    return self.forceDeviceOrientation;
 }
 
 #pragma mark - getter
@@ -916,7 +915,8 @@
 
 @implementation ZFPlayerController (ZFPlayerScrollView)
 
-+ (void)load {
++ (void)initialize {
+    [super initialize];
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         SEL selectors[] = {
@@ -1019,6 +1019,16 @@
         /// add to window
         if (!self.stopWhileNotVisible && playerDisapperaPercent >= self.playerDisapperaPercent) [self addPlayerViewToKeyWindow];
     };
+    
+    scrollView.zf_playerShouldPlayInScrollView = ^(NSIndexPath * _Nonnull indexPath) {
+        @strongify(self)
+        if (self.zf_playerShouldPlayInScrollView) self.zf_playerShouldPlayInScrollView(indexPath);
+    };
+    
+    scrollView.zf_scrollViewDidEndScrollingCallback = ^(NSIndexPath * _Nonnull indexPath) {
+        @strongify(self)
+        if (self.zf_scrollViewDidEndScrollingCallback) self.zf_scrollViewDidEndScrollingCallback(indexPath);
+    };
 }
 
 - (void)setWWANAutoPlay:(BOOL)WWANAutoPlay {
@@ -1100,6 +1110,14 @@
     objc_setAssociatedObject(self, @selector(zf_playerDidDisappearInScrollView), zf_playerDidDisappearInScrollView, OBJC_ASSOCIATION_COPY_NONATOMIC);
 }
 
+- (void)setZf_playerShouldPlayInScrollView:(void (^)(NSIndexPath * _Nonnull))zf_playerShouldPlayInScrollView {
+    objc_setAssociatedObject(self, @selector(zf_playerShouldPlayInScrollView), zf_playerShouldPlayInScrollView, OBJC_ASSOCIATION_COPY_NONATOMIC);
+}
+
+- (void)setZf_scrollViewDidEndScrollingCallback:(void (^)(NSIndexPath * _Nonnull))zf_scrollViewDidEndScrollingCallback {
+    objc_setAssociatedObject(self, @selector(zf_scrollViewDidEndScrollingCallback), zf_scrollViewDidEndScrollingCallback, OBJC_ASSOCIATION_COPY_NONATOMIC);
+}
+
 #pragma mark - getter
 
 - (UIScrollView *)scrollView {
@@ -1124,6 +1142,10 @@
 
 - (NSIndexPath *)playingIndexPath {
     return objc_getAssociatedObject(self, _cmd);
+}
+
+- (NSIndexPath *)shouldPlayIndexPath {
+    return self.scrollView.zf_shouldPlayIndexPath;
 }
 
 - (NSArray<NSArray<NSURL *> *> *)sectionAssetURLs {
@@ -1172,7 +1194,23 @@
     return objc_getAssociatedObject(self, _cmd);
 }
 
+- (void (^)(NSIndexPath * _Nonnull))zf_playerShouldPlayInScrollView {
+    return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void (^)(NSIndexPath * _Nonnull))zf_scrollViewDidEndScrollingCallback {
+    return objc_getAssociatedObject(self, _cmd);
+}
+
 #pragma mark - Public method
+
+- (void)zf_filterShouldPlayCellWhileScrolled:(void (^ __nullable)(NSIndexPath *indexPath))handler {
+    [self.scrollView zf_filterShouldPlayCellWhileScrolled:handler];
+}
+
+- (void)zf_filterShouldPlayCellWhileScrolling:(void (^ __nullable)(NSIndexPath *indexPath))handler {
+    [self.scrollView zf_filterShouldPlayCellWhileScrolling:handler];
+}
 
 - (void)playTheIndexPath:(NSIndexPath *)indexPath {
     self.playingIndexPath = indexPath;
@@ -1184,6 +1222,78 @@
         self.currentPlayIndex = indexPath.row;
     }
     self.assetURL = assetURL;
+}
+
+
+- (void)playTheIndexPath:(NSIndexPath *)indexPath scrollPosition:(ZFPlayerScrollViewScrollPosition)scrollPosition animated:(BOOL)animated {
+    [self playTheIndexPath:indexPath scrollPosition:scrollPosition animated:animated completionHandler:nil];
+}
+
+- (void)playTheIndexPath:(NSIndexPath *)indexPath scrollPosition:(ZFPlayerScrollViewScrollPosition)scrollPosition animated:(BOOL)animated completionHandler:(void (^ __nullable)(void))completionHandler {
+    NSURL *assetURL;
+    if (self.sectionAssetURLs.count) {
+        assetURL = self.sectionAssetURLs[indexPath.section][indexPath.row];
+    } else if (self.assetURLs.count) {
+        assetURL = self.assetURLs[indexPath.row];
+        self.currentPlayIndex = indexPath.row;
+    }
+    @weakify(self)
+    [self.scrollView zf_scrollToRowAtIndexPath:indexPath atScrollPosition:scrollPosition animated:animated completionHandler:^{
+        @strongify(self)
+        if (completionHandler) completionHandler();
+        self.playingIndexPath = indexPath;
+        self.assetURL = assetURL;
+    }];
+}
+
+
+- (void)playTheIndexPath:(NSIndexPath *)indexPath assetURL:(NSURL *)assetURL {
+    self.playingIndexPath = indexPath;
+    self.assetURL = assetURL;
+}
+
+
+- (void)playTheIndexPath:(NSIndexPath *)indexPath
+                assetURL:(NSURL *)assetURL
+          scrollPosition:(ZFPlayerScrollViewScrollPosition)scrollPosition
+                animated:(BOOL)animated {
+    [self playTheIndexPath:indexPath assetURL:assetURL scrollPosition:scrollPosition animated:animated completionHandler:nil];
+}
+
+
+- (void)playTheIndexPath:(NSIndexPath *)indexPath
+                assetURL:(NSURL *)assetURL
+          scrollPosition:(ZFPlayerScrollViewScrollPosition)scrollPosition
+                animated:(BOOL)animated
+       completionHandler:(void (^ __nullable)(void))completionHandler {
+    @weakify(self)
+    [self.scrollView zf_scrollToRowAtIndexPath:indexPath atScrollPosition:scrollPosition animated:animated completionHandler:^{
+        @strongify(self)
+        if (completionHandler) completionHandler();
+        self.playingIndexPath = indexPath;
+        self.assetURL = assetURL;
+    }];
+}
+
+@end
+
+@implementation ZFPlayerController (ZFPlayerDeprecated)
+
+- (void)updateScrollViewPlayerToCell {
+    if (self.currentPlayerManager.view && self.playingIndexPath && self.containerViewTag) {
+        UIView *cell = [self.scrollView zf_getCellForIndexPath:self.playingIndexPath];
+        self.containerView = [cell viewWithTag:self.containerViewTag];
+        [self.orientationObserver cellModelRotateView:self.currentPlayerManager.view rotateViewAtCell:cell playerViewTag:self.containerViewTag];
+        [self layoutPlayerSubViews];
+    }
+}
+
+- (void)updateNoramlPlayerWithContainerView:(UIView *)containerView {
+    if (self.currentPlayerManager.view && self.containerView) {
+        self.containerView = containerView;
+        [self.orientationObserver cellOtherModelRotateView:self.currentPlayerManager.view containerView:self.containerView];
+        [self layoutPlayerSubViews];
+    }
 }
 
 - (void)playTheIndexPath:(NSIndexPath *)indexPath scrollToTop:(BOOL)scrollToTop completionHandler:(void (^ _Nullable)(void))completionHandler {
@@ -1227,27 +1337,6 @@
     self.assetURL = assetURL;
     if (scrollToTop) {
         [self.scrollView zf_scrollToRowAtIndexPath:indexPath completionHandler:nil];
-    }
-}
-
-@end
-
-@implementation ZFPlayerController (ZFPlayerDeprecated)
-
-- (void)updateScrollViewPlayerToCell {
-    if (self.currentPlayerManager.view && self.playingIndexPath && self.containerViewTag) {
-        UIView *cell = [self.scrollView zf_getCellForIndexPath:self.playingIndexPath];
-        self.containerView = [cell viewWithTag:self.containerViewTag];
-        [self.orientationObserver cellModelRotateView:self.currentPlayerManager.view rotateViewAtCell:cell playerViewTag:self.containerViewTag];
-        [self layoutPlayerSubViews];
-    }
-}
-
-- (void)updateNoramlPlayerWithContainerView:(UIView *)containerView {
-    if (self.currentPlayerManager.view && self.containerView) {
-        self.containerView = containerView;
-        [self.orientationObserver cellOtherModelRotateView:self.currentPlayerManager.view containerView:self.containerView];
-        [self layoutPlayerSubViews];
     }
 }
 
