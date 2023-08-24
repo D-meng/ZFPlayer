@@ -202,7 +202,9 @@ static NSString *const kPresentationSize         = @"presentationSize";
 
 - (void)seekToTime:(NSTimeInterval)time completionHandler:(void (^ __nullable)(BOOL finished))completionHandler {
     if (self.totalTime > 0) {
-        CMTime seekTime = CMTimeMake(time, 1);
+        [_player.currentItem cancelPendingSeeks];
+        int32_t timeScale = _player.currentItem.asset.duration.timescale;
+        CMTime seekTime = CMTimeMakeWithSeconds(time, timeScale);
         [_player seekToTime:seekTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:completionHandler];
     } else {
         self.seekTime = time;
@@ -346,6 +348,7 @@ static NSString *const kPresentationSize         = @"presentationSize";
         @strongify(self)
         if (!self) return;
         self.playState = ZFPlayerPlayStatePlayStopped;
+        self.player.rate = self.rate;
         if (self.playerDidToEnd) self.playerDidToEnd(self);
     }];
 }
@@ -385,7 +388,11 @@ static NSString *const kPresentationSize         = @"presentationSize";
             // When the buffer is good
             if (self.playerItem.playbackLikelyToKeepUp) {
                 self.loadState = ZFPlayerLoadStatePlayable;
-                if (self.isPlaying) [self.player play];
+                if (self.isPlaying)
+                {
+                    [self.player play];
+                    self.player.rate = self.rate;
+                }
             }
         } else if ([keyPath isEqualToString:kLoadedTimeRanges]) {
             NSTimeInterval bufferTime = [self availableDuration];
